@@ -1,0 +1,6 @@
+{
+    "timetype" : 12,
+    "timeformat" : "hh:mm:ss",
+    "dateformat" : "dd-mm-yyyy",
+    "ui_style" : "diffness"
+}

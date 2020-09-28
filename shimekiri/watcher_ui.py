@@ -1,6 +1,8 @@
 from PySide2 import QtWidgets
 from PySide2 import QtCore
 from shimekiri import Logger
+from shimekiri import Config
+from shimekiri.deadline import Deadline
 
 
 class WatcherDialog(QtWidgets.QDialog):
