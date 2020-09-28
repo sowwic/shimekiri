@@ -7,8 +7,12 @@ from shimekiri import directories
 
 
 def load_style(name="diffnes"):
-    with open(directories.STYLES_LIB / (name + ".qss"), "r") as style_file:
-        return style_file.read()
+    try:
+        with open(directories.STYLES_LIB / (Config.get("ui_style") + ".qss"), "r") as style_file:
+            return style_file.read()
+    except BaseException:
+        Logger.exception(f"Failed to load style {name}")
+        return ""
 
 
 if __name__ == "__main__":
@@ -19,7 +23,6 @@ if __name__ == "__main__":
 
     # Create dialog and show
     main_dialog = WatcherDialog()
-    main_widget = WatcherWidget(main_dialog)
     main_dialog.show()
 
     sys.exit(app.exec_())
