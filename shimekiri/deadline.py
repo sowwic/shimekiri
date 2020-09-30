@@ -57,14 +57,16 @@ class DeadlineWidget(QtWidgets.QWidget):
                  parent=None,
                  style="",
                  display=DisplayEnum.seconds,
-                 update_interval=UpdateInterval.second,
+                 interval_type=UpdateInterval.second,
                  interval_mult: int = 1):
 
         super().__init__(parent)
         self.deadline = deadline
         self.style = style
         self.display = display
-        self.interval = interval_mult * update_interval.value
+        self.interval_mult = interval_mult
+        self.interval_type = interval_type
+        self.interval = self.interval_type.value * interval_mult
         self.timer = QtCore.QTimer(self)
         self.setStyleSheet(self.style)
 
@@ -96,7 +98,6 @@ class DeadlineWidget(QtWidgets.QWidget):
         Logger.debug("Started countdown")
 
     def update_time(self):
-        Logger.debug(type(self.display))
         if self.display.value == DisplayEnum.days.value:
             self.until_label.setText(f"{self.deadline.get_days_remaining()} days left")
         elif self.display.value == DisplayEnum.hours.value:
@@ -105,11 +106,12 @@ class DeadlineWidget(QtWidgets.QWidget):
             self.until_label.setText(f"{int(self.deadline.get_minutes_remaining())} minutes left")
         elif self.display.value == DisplayEnum.seconds.value:
             self.until_label.setText(f"{self.deadline.get_seconds_remaining()} seconds left")
-        Logger.debug("Updated time")
+        # Logger.debug("Updated time")
 
-    def as_dict(self):
-        dl_dict = self.deadline.to_dict()
-        dl_dict["display"] = self.display
+    def as_dict(self) -> dict:
+        dl_dict = self.deadline.as_dict()
+        dl_dict["display"] = self.display.name
         dl_dict["style"] = self.style
-        dl_dict["update_interval"] = self.interval
+        dl_dict["update_interval"] = self.interval_type.name
+        dl_dict["update_mult"] = self.interval_mult
         return dl_dict

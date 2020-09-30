@@ -1,6 +1,5 @@
 import enum
 from logging import setLogRecordFactory
-from shimekiri import logger
 from PySide2 import QtWidgets
 from PySide2 import QtCore
 from shimekiri import Logger
@@ -59,12 +58,14 @@ class WatcherWidget(QtWidgets.QWidget):
     def create_new_deadline(self) -> Deadline:
         info_dialog = DeadLineInfoDialog(self)
         result = info_dialog.exec_()
-        # if not result == DeadLineInfoDialog.Accepted:
-        #     return
+        if not result == DeadLineInfoDialog.Accepted:
+            return
 
-        new_dl = Deadline("testy_boi", QtCore.QDateTime(2020, 12, 13, 0, 0, 0))
+        new_dl, display_options = info_dialog.get_data()
+        Logger.debug(new_dl)
+
         data_dict = self.get_deadlines()
-        data_dict[new_dl.name] = new_dl.as_dict()
+        data_dict[new_dl.deadline.name] = new_dl.as_dict()
         fileFn.write_json(self.DEADLINE_FILE, data_dict)
         self.update_list()
 
@@ -108,13 +109,12 @@ class WatcherWidget(QtWidgets.QWidget):
 
 
 class DeadLineInfoDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, deadline_obj: Deadline = None):
+    def __init__(self, parent=None, deadline_widget: DeadlineWidget = None):
         super().__init__(parent)
 
         self.setModal(1)
-        self.setMinimumSize(200, 300)
-        self.deadline_obj = deadline_obj or Deadline("New deadline", QtCore.QDateTime.currentDateTime())
-        Logger.debug(self.deadline_obj.until)
+        self.setMinimumSize(400, 600)
+        self.deadline_widget = deadline_widget or DeadlineWidget(Deadline("New deadline", QtCore.QDateTime.currentDateTime()))
 
         self.create_actions()
         self.create_widgets()
@@ -125,12 +125,53 @@ class DeadLineInfoDialog(QtWidgets.QDialog):
         pass
 
     def create_widgets(self):
+        self.info_grp = QtWidgets.QGroupBox("Info")
+        self.display_grp = QtWidgets.QGroupBox("Display")
         self.main_widget = QtWidgets.QWidget()
+        self.create_button = QtWidgets.QPushButton("Create")
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+
+        # Info
+        self.name_lineedit = QtWidgets.QLineEdit(self.deadline_widget.deadline.name)
+        self.datetime_edit = QtWidgets.QDateTimeEdit()
+        self.datetime_edit.setCalendarPopup(1)
+        self.datetime_edit.setAccelerated(1)
+        self.datetime_edit.setDateTime(self.deadline_widget.deadline.until)
+        self.notes_textedit = QtWidgets.QTextEdit(self.deadline_widget.deadline.notes)
 
     def create_layouts(self):
+        self.info_layout = QtWidgets.QFormLayout()
+        self.info_layout.addRow("Name:", self.name_lineedit)
+        self.info_layout.addRow("Until:", self.datetime_edit)
+        self.info_layout.addRow("Notes:", self.notes_textedit)
+        self.info_grp.setLayout(self.info_layout)
+
+        self.display_layout = QtWidgets.QFormLayout()
+        self.display_grp.setLayout(self.display_layout)
+
+        self.action_buttons_layout = QtWidgets.QHBoxLayout()
+        self.action_buttons_layout.addStretch()
+        self.action_buttons_layout.addWidget(self.create_button)
+        self.action_buttons_layout.addWidget(self.cancel_button)
+
         self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.addWidget(self.info_grp)
+        self.main_layout.addWidget(self.display_grp)
+        self.main_layout.addStretch()
+        self.main_layout.addLayout(self.action_buttons_layout)
+
+        self.main_layout.setContentsMargins(0, 0, 0, 5)
         self.main_widget.setLayout(self.main_layout)
         self.setLayout(self.main_layout)
 
     def create_connections(self):
-        pass
+        self.create_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.close)
+
+    def get_data(self):
+        self.deadline_widget.deadline.name = self.name_lineedit.text()
+        self.deadline_widget.deadline.until = self.datetime_edit.dateTime()
+        self.deadline_widget.deadline.notes = self.notes_textedit.toPlainText()
+
+        display_options = {}
+        return self.deadline_widget, display_options
