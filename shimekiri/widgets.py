@@ -47,3 +47,21 @@ class ColorButton(QtWidgets.QLabel):
     def mouseReleaseEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.select_color()
+
+
+class IntervalWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None, label_text="", spinbox_value=1, combobox_options=[]):
+        super().__init__(parent)
+        self.label = QtWidgets.QLabel(label_text)
+        if not label_text:
+            self.label.hide()
+        self.mult_spinbox = QtWidgets.QSpinBox()
+        self.mult_spinbox.setMinimum(1)
+        self.combobox = QtWidgets.QComboBox()
+        self.combobox.addItems(combobox_options)
+
+        self.main_layout = QtWidgets.QHBoxLayout()
+        self.main_layout.addWidget(self.label)
+        self.main_layout.addWidget(self.mult_spinbox)
+        self.main_layout.addWidget(self.combobox)
+        self.setLayout(self.main_layout)

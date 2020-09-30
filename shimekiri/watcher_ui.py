@@ -4,9 +4,10 @@ from PySide2 import QtWidgets
 from PySide2 import QtCore
 from shimekiri import Logger
 from shimekiri import Config
-from shimekiri.deadline import Deadline, DeadlineWidget
+from shimekiri.deadline import Deadline, DeadlineWidget, DisplayEnum, IntervalEnum
 from shimekiri import directories
 from shimekiri import fileFn
+from shimekiri import widgets
 
 
 class WatcherDialog(QtWidgets.QMainWindow):
@@ -62,30 +63,9 @@ class WatcherWidget(QtWidgets.QWidget):
             return
 
         new_dl, display_options = info_dialog.get_data()
-        Logger.debug(new_dl)
-
         data_dict = self.get_deadlines()
         data_dict[new_dl.deadline.name] = new_dl.as_dict()
         fileFn.write_json(self.DEADLINE_FILE, data_dict)
-        self.update_list()
-
-    def add_deadline_item(self, deadline: Deadline):
-        list_item = QtWidgets.QListWidgetItem()
-        deadline_wgt = DeadlineWidget(deadline)
-        deadline_wgt.update_time()
-        self.deadline_list.addItem(list_item)
-        self.deadline_list.setItemWidget(list_item, deadline_wgt)
-        list_item.setSizeHint(deadline_wgt.size())
-
-    def save_deadlines(self):
-        data_dict = self.get_deadlines()
-
-        for item in self.deadline_list.items():
-            dl_widget: DeadlineWidget = self.deadline_list.itemWidget(item)
-            data_dict[dl_widget.deadline.name] = dl_widget.as_dict()
-
-        fileFn.write_json(self.DEADLINE_FILE, data_dict)
-        Logger.debug(f"Saved deadlines: {data_dict}")
         self.update_list()
 
     def get_deadlines(self) -> dict:
@@ -101,7 +81,17 @@ class WatcherWidget(QtWidgets.QWidget):
         dl_dict = self.get_deadlines()
         for key in dl_dict:
             dl_instance = Deadline(key, QtCore.QDateTime.fromString(dl_dict[key].get("until", "")), notes=dl_dict[key].get("notes", ""))
-            self.add_deadline_item(dl_instance)
+            deadline_wgt = DeadlineWidget(dl_instance,
+                                          style=dl_dict[key].get("style", ""),
+                                          display=DisplayEnum[dl_dict[key].get("display", "days")],
+                                          interval_type=IntervalEnum[dl_dict[key].get("update_interval", "hour")],
+                                          interval_mult=dl_dict[key].get("update_mult", 1))
+            deadline_wgt.update_time()
+
+            list_item = QtWidgets.QListWidgetItem()
+            self.deadline_list.addItem(list_item)
+            self.deadline_list.setItemWidget(list_item, deadline_wgt)
+            list_item.setSizeHint(deadline_wgt.size())
 
     def update_list(self):
         self.deadline_list.clear()
@@ -139,6 +129,11 @@ class DeadLineInfoDialog(QtWidgets.QDialog):
         self.datetime_edit.setDateTime(self.deadline_widget.deadline.until)
         self.notes_textedit = QtWidgets.QTextEdit(self.deadline_widget.deadline.notes)
 
+        # Display
+        self.countdown_mode = QtWidgets.QComboBox()
+        self.countdown_mode.addItems([member.name for member in list(DisplayEnum)])
+        self.interval_wgt = widgets.IntervalWidget(label_text="", spinbox_value=1, combobox_options=[member.name for member in list(IntervalEnum)])
+
     def create_layouts(self):
         self.info_layout = QtWidgets.QFormLayout()
         self.info_layout.addRow("Name:", self.name_lineedit)
@@ -147,6 +142,8 @@ class DeadLineInfoDialog(QtWidgets.QDialog):
         self.info_grp.setLayout(self.info_layout)
 
         self.display_layout = QtWidgets.QFormLayout()
+        self.display_layout.addRow("Countdown mode:", self.countdown_mode)
+        self.display_layout.addRow("Update interval:", self.interval_wgt)
         self.display_grp.setLayout(self.display_layout)
 
         self.action_buttons_layout = QtWidgets.QHBoxLayout()
@@ -172,6 +169,9 @@ class DeadLineInfoDialog(QtWidgets.QDialog):
         self.deadline_widget.deadline.name = self.name_lineedit.text()
         self.deadline_widget.deadline.until = self.datetime_edit.dateTime()
         self.deadline_widget.deadline.notes = self.notes_textedit.toPlainText()
+        self.deadline_widget.display = DisplayEnum[self.countdown_mode.currentText()]
+        self.deadline_widget.interval_type = IntervalEnum[self.interval_wgt.combobox.currentText()]
+        self.deadline_widget.interval_mult = self.interval_wgt.mult_spinbox.value()
 
         display_options = {}
         return self.deadline_widget, display_options

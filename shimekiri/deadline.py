@@ -16,7 +16,7 @@ class DisplayEnum(enum.Enum):
     seconds = 3
 
 
-class UpdateInterval(enum.Enum):
+class IntervalEnum(enum.Enum):
     hour = 3600000
     minute = 60000
     second = 1000
@@ -57,7 +57,7 @@ class DeadlineWidget(QtWidgets.QWidget):
                  parent=None,
                  style="",
                  display=DisplayEnum.seconds,
-                 interval_type=UpdateInterval.second,
+                 interval_type=IntervalEnum.second,
                  interval_mult: int = 1):
 
         super().__init__(parent)
