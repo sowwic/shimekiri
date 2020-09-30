@@ -43,7 +43,7 @@ class WatcherWidget(QtWidgets.QWidget):
         pass
 
     def create_widgets(self):
-        self.deadline_list = QtWidgets.QListWidget()
+        self.deadline_list = widgets.ReordarabeListWidget()
         self.add_button = QtWidgets.QPushButton("+")
 
     def create_layouts(self):
@@ -100,10 +100,11 @@ class WatcherWidget(QtWidgets.QWidget):
 
 class DeadLineInfoDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, deadline_widget: DeadlineWidget = None):
-        super().__init__(parent)
+        super().__init__(parent, QtCore.Qt.Tool)
 
         self.setModal(1)
         self.setMinimumSize(400, 600)
+        self.setWindowTitle("Deadline")
         self.deadline_widget = deadline_widget or DeadlineWidget(Deadline("New deadline", QtCore.QDateTime.currentDateTime()))
 
         self.create_actions()

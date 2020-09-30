@@ -65,3 +65,18 @@ class IntervalWidget(QtWidgets.QWidget):
         self.main_layout.addWidget(self.mult_spinbox)
         self.main_layout.addWidget(self.combobox)
         self.setLayout(self.main_layout)
+
+
+class ReordarabeListWidget(QtWidgets.QListWidget):
+    itemsReordered = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
+        self.setDefaultDropAction(QtCore.Qt.MoveAction)
+        self.installEventFilter(self)
+
+    def eventFilter(self, sender, event):
+        if event.type() == QtCore.QEvent.ChildRemoved:
+            self.itemsReordered.emit()
+        return False
