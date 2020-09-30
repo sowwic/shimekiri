@@ -1,11 +1,115 @@
-from datetime import datetime
+import enum
+from pathlib import Path
+from shimekiri import logger
+from shimekiri import Logger
+from PySide2 import QtCore
+from PySide2 import QtWidgets
+from shimekiri import fileFn
+from shimekiri import Config
+
+
+@enum.unique
+class DisplayEnum(enum.Enum):
+    days = 0
+    hours = 1
+    minutes = 2
+    seconds = 3
+
+
+class UpdateInterval(enum.Enum):
+    hour = 3600000
+    minute = 60000
+    second = 1000
 
 
 class Deadline:
-    def __init__(self, name: str, date_time: datetime, notes: str = ""):
+    def __init__(self, name: str, datetime: QtCore.QDateTime, notes: str = ""):
         """
         docstring
         """
         self.name = name
-        self.until = date_time
+        self.until = datetime
         self.notes = notes
+        self.timeformat = "hh:mm:ss"
+
+    def get_days_remaining(self):
+        return QtCore.QDateTime.currentDateTime().daysTo(self.until)
+
+    def get_hours_remaining(self):
+        return QtCore.QDateTime.currentDateTime().secsTo(self.until) // 3600
+
+    def get_seconds_remaining(self):
+        return QtCore.QDateTime.currentDateTime().secsTo(self.until)
+
+    def get_minutes_remaining(self):
+        return QtCore.QDateTime.currentDateTime().secsTo(self.until) // 60
+
+    def as_dict(self):
+        dl_dict = {"until": self.until.toString(),
+                   "notes": self.notes,
+                   "timeformat": self.timeformat}
+        return dl_dict
+
+
+class DeadlineWidget(QtWidgets.QWidget):
+    def __init__(self,
+                 deadline: Deadline,
+                 parent=None,
+                 style="",
+                 display=DisplayEnum.seconds,
+                 update_interval=UpdateInterval.second,
+                 interval_mult: int = 1):
+
+        super().__init__(parent)
+        self.deadline = deadline
+        self.style = style
+        self.display = display
+        self.interval = interval_mult * update_interval.value
+        self.timer = QtCore.QTimer(self)
+        self.setStyleSheet(self.style)
+
+        self.create_actions()
+        self.create_widgets()
+        self.create_layouts()
+        self.create_connections()
+
+        self.start_countdown()
+
+    def create_actions(self):
+        pass
+
+    def create_widgets(self):
+        self.name_label = QtWidgets.QLabel(self.deadline.name)
+        self.until_label = QtWidgets.QLabel()
+
+    def create_layouts(self):
+        self.main_layout = QtWidgets.QHBoxLayout()
+        self.main_layout.addWidget(self.name_label)
+        self.main_layout.addWidget(self.until_label)
+        self.setLayout(self.main_layout)
+
+    def create_connections(self):
+        self.timer.timeout.connect(self.update_time)
+
+    def start_countdown(self):
+        self.timer.start(self.interval)
+        Logger.debug("Started countdown")
+
+    def update_time(self):
+        Logger.debug(type(self.display))
+        if self.display.value == DisplayEnum.days.value:
+            self.until_label.setText(f"{self.deadline.get_days_remaining()} days left")
+        elif self.display.value == DisplayEnum.hours.value:
+            self.until_label.setText(f"{int(self.deadline.get_hours_remaining())} hours left")
+        elif self.display.value == DisplayEnum.minutes.value:
+            self.until_label.setText(f"{int(self.deadline.get_minutes_remaining())} minutes left")
+        elif self.display.value == DisplayEnum.seconds.value:
+            self.until_label.setText(f"{self.deadline.get_seconds_remaining()} seconds left")
+        Logger.debug("Updated time")
+
+    def as_dict(self):
+        dl_dict = self.deadline.to_dict()
+        dl_dict["display"] = self.display
+        dl_dict["style"] = self.style
+        dl_dict["update_interval"] = self.interval
+        return dl_dict

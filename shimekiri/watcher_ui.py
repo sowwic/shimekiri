@@ -1,11 +1,13 @@
-from datetime import datetime
+import enum
+from logging import setLogRecordFactory
+from shimekiri import logger
 from PySide2 import QtWidgets
 from PySide2 import QtCore
-from PySide2 import QtGui
 from shimekiri import Logger
 from shimekiri import Config
-from shimekiri.deadline import Deadline
+from shimekiri.deadline import Deadline, DeadlineWidget
 from shimekiri import directories
+from shimekiri import fileFn
 
 
 class WatcherDialog(QtWidgets.QMainWindow):
@@ -23,14 +25,19 @@ class WatcherDialog(QtWidgets.QMainWindow):
 
 
 class WatcherWidget(QtWidgets.QWidget):
+
+    DEADLINE_FILE = Config.get_appdata_dir() / "deadlines.json"
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.create_actions()
         self.create_widgets()
         self.create_layouts()
         self.create_connections()
-
         self.setContentsMargins(0, 0, 0, 0)
+
+        # Load deadline data
+        self.update_list()
 
     def create_actions(self):
         pass
@@ -50,22 +57,64 @@ class WatcherWidget(QtWidgets.QWidget):
         self.add_button.clicked.connect(self.create_new_deadline)
 
     def create_new_deadline(self) -> Deadline:
-        testdl = Deadline("test", datetime(2020, 12, 13))
-        self.add_deadline(testdl)
+        info_dialog = DeadLineInfoDialog(self)
+        result = info_dialog.exec_()
+        # if not result == DeadLineInfoDialog.Accepted:
+        #     return
 
-    def add_deadline(self, deadline: Deadline):
+        new_dl = Deadline("testy_boi", QtCore.QDateTime(2020, 12, 13, 0, 0, 0))
+        data_dict = self.get_deadlines()
+        data_dict[new_dl.name] = new_dl.as_dict()
+        fileFn.write_json(self.DEADLINE_FILE, data_dict)
+        self.update_list()
+
+    def add_deadline_item(self, deadline: Deadline):
         list_item = QtWidgets.QListWidgetItem()
         deadline_wgt = DeadlineWidget(deadline)
+        deadline_wgt.update_time()
         self.deadline_list.addItem(list_item)
         self.deadline_list.setItemWidget(list_item, deadline_wgt)
         list_item.setSizeHint(deadline_wgt.size())
 
+    def save_deadlines(self):
+        data_dict = self.get_deadlines()
 
-class DeadlineWidget(QtWidgets.QWidget):
-    def __init__(self, deadline: Deadline, parent=None):
+        for item in self.deadline_list.items():
+            dl_widget: DeadlineWidget = self.deadline_list.itemWidget(item)
+            data_dict[dl_widget.deadline.name] = dl_widget.as_dict()
+
+        fileFn.write_json(self.DEADLINE_FILE, data_dict)
+        Logger.debug(f"Saved deadlines: {data_dict}")
+        self.update_list()
+
+    def get_deadlines(self) -> dict:
+        data_dict = {}
+        if self.DEADLINE_FILE.is_file():
+            data_dict = fileFn.load_json(self.DEADLINE_FILE)
+        else:
+            fileFn.create_file(self.DEADLINE_FILE)
+
+        return data_dict
+
+    def import_deadlines(self):
+        dl_dict = self.get_deadlines()
+        for key in dl_dict:
+            dl_instance = Deadline(key, QtCore.QDateTime.fromString(dl_dict[key].get("until", "")), notes=dl_dict[key].get("notes", ""))
+            self.add_deadline_item(dl_instance)
+
+    def update_list(self):
+        self.deadline_list.clear()
+        self.import_deadlines()
+
+
+class DeadLineInfoDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, deadline_obj: Deadline = None):
         super().__init__(parent)
-        self.deadline = deadline
-        Logger.debug(deadline.name)
+
+        self.setModal(1)
+        self.setMinimumSize(200, 300)
+        self.deadline_obj = deadline_obj or Deadline("New deadline", QtCore.QDateTime.currentDateTime())
+        Logger.debug(self.deadline_obj.until)
 
         self.create_actions()
         self.create_widgets()
@@ -76,13 +125,11 @@ class DeadlineWidget(QtWidgets.QWidget):
         pass
 
     def create_widgets(self):
-        self.name_label = QtWidgets.QLabel(self.deadline.name)
-        self.date_label = QtWidgets.QLabel(self.deadline.until.strftime(Config.get("dateformat") + " " + Config.get("timeformat")))
+        self.main_widget = QtWidgets.QWidget()
 
     def create_layouts(self):
-        self.main_layout = QtWidgets.QHBoxLayout()
-        self.main_layout.addWidget(self.name_label)
-        self.main_layout.addWidget(self.date_label)
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_widget.setLayout(self.main_layout)
         self.setLayout(self.main_layout)
 
     def create_connections(self):

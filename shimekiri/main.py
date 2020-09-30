@@ -24,5 +24,6 @@ if __name__ == "__main__":
     # Create dialog and show
     main_dialog = WatcherDialog()
     main_dialog.show()
+    Logger.set_level(Config.get("logging.level", default=10))
 
     sys.exit(app.exec_())

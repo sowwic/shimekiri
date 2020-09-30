@@ -1,8 +1,7 @@
 """Common file operations"""
 import json
-import os
 import pickle
-import shutil
+from pathlib import Path
 from shimekiri import Logger
 
 
@@ -15,12 +14,12 @@ def write_json(path, data={}, as_string=False, sort_keys=True):
             else:
                 json.dump(data, json_file, indent=4)
 
-    except IOError as e:
-        Logger.exception("{0} is not a valid file path".format(path), exc_info=e)
+    except IOError:
+        Logger.exception("{0} is not a valid file path".format(path))
         return None
 
     except BaseException:
-        Logger.exception("Failed to write file {0}".format(path), exc_info=1)
+        Logger.exception("Failed to write file {0}".format(path))
         return None
 
     return path
@@ -34,11 +33,11 @@ def load_json(path, string_data=False):
             else:
                 data = json.load(json_file)
 
-    except IOError as e:
-        Logger.exception("{0} is not a valid file path".format(path), exc_info=e)
+    except IOError:
+        Logger.exception("{0} is not a valid file path".format(path))
         return None
-    except BaseException as e:
-        Logger.exception("Failed to load file {0}".format(path), exc_info=e)
+    except BaseException:
+        Logger.exception("Failed to load file {0}".format(path))
         return None
 
     return data
@@ -85,9 +84,9 @@ def create_file(directory="", name="", data="", extension="", path=""):
         if extension:
             file_name = "{0}.{1}".format(name, extension)
 
-        file_path = os.path.normpath(os.path.join(directory, file_name))
+        file_path = Path(directory) / file_name
     elif path:
-        file_path = path
+        file_path = Path(path)
 
     try:
         with open(file_path, "w") as f:
@@ -96,20 +95,7 @@ def create_file(directory="", name="", data="", extension="", path=""):
         Logger.exception("Failed to create file {0}".format(file_path))
         return None
 
-    return (file_path)
-
-
-def delete_oldest(directory, file_limit):
-    all_files = ["{0}/{1}".format(directory, child) for child in os.listdir(directory)]
-
-    if file_limit and len(all_files) > file_limit:
-        try:
-            oldest_file = min(all_files, key=os.path.getctime)
-            os.remove(oldest_file)
-            return oldest_file
-        except Exception as e:
-            Logger.exception("Failed to delete file {0}".format(oldest_file), exc_info=e)
-            return None
+    return file_path
 
 
 # Directory
@@ -121,10 +107,7 @@ def create_missing_dir(path):
     :return: Path to directory
     :rtype: str
     """
-    if not os.path.isdir(path):
-        os.makedirs(path)
+    path = Path(path)
+    if not path.is_dir():
+        path.mkdir()
     return path
-
-
-if __name__ == "__main__":
-    pass
