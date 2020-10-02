@@ -18,10 +18,25 @@ class WatcherDialog(QtWidgets.QMainWindow):
         self.setWindowTitle("Shimekiri")
         # self.setWindowFlags(QtCore.Qt.WindowStaysOnBottomHint)
         self.setMinimumSize(200, 300)
+        self.load_geometry_json()
 
         # Create widgets
         watcher = WatcherWidget()
         self.setCentralWidget(watcher)
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.write_geometry_json()
+        self.hide()
+
+    def write_geometry_json(self):
+        Config.set("deadliner.geometry", bytes(self.saveGeometry().toHex()).decode("ascii"))
+
+    def load_geometry_json(self):
+        old_geometry = Config.get("deadliner.geometry")
+        if old_geometry:
+            old_geometry_byte = QtCore.QByteArray.fromHex(bytes(old_geometry, "ascii"))
+            self.restoreGeometry(old_geometry_byte)
 
 
 class WatcherWidget(QtWidgets.QWidget):
