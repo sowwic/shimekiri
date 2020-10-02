@@ -52,6 +52,9 @@ class Deadline:
 
 
 class DeadlineWidget(QtWidgets.QWidget):
+
+    DEADLINE_FILE = Config.get_appdata_dir() / "deadlines.json"
+
     def __init__(self,
                  deadline: Deadline,
                  parent=None,
@@ -68,7 +71,9 @@ class DeadlineWidget(QtWidgets.QWidget):
         self.interval_type = interval_type
         self.interval = self.interval_type.value * interval_mult
         self.timer = QtCore.QTimer(self)
+
         self.setStyleSheet(self.style)
+        self.setToolTip(self.deadline.notes)
 
         self.create_actions()
         self.create_widgets()
@@ -106,7 +111,6 @@ class DeadlineWidget(QtWidgets.QWidget):
             self.until_label.setText(f"{int(self.deadline.get_minutes_remaining())} minutes left")
         elif self.display.value == DisplayEnum.seconds.value:
             self.until_label.setText(f"{self.deadline.get_seconds_remaining()} seconds left")
-        # Logger.debug("Updated time")
 
     def as_dict(self) -> dict:
         dl_dict = self.deadline.as_dict()

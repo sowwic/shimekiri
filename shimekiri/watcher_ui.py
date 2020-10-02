@@ -58,7 +58,7 @@ class WatcherWidget(QtWidgets.QWidget):
         pass
 
     def create_widgets(self):
-        self.deadline_list = widgets.ReordarabeListWidget()
+        self.deadline_list = widgets.DeadlineListWidget()
         self.add_button = QtWidgets.QPushButton("+")
 
     def create_layouts(self):
@@ -69,10 +69,16 @@ class WatcherWidget(QtWidgets.QWidget):
         self.setLayout(self.main_layout)
 
     def create_connections(self):
-        self.add_button.clicked.connect(self.create_new_deadline)
+        self.add_button.clicked.connect(self.edit_deadline)
+        self.deadline_list.delete_action.triggered.connect(self.delete_deadline)
+        self.deadline_list.edit_action.triggered.connect(self.modify_selected_deadline)
 
-    def create_new_deadline(self) -> Deadline:
-        info_dialog = DeadLineInfoDialog(self)
+    def modify_selected_deadline(self):
+        current_selection: QtWidgets.QListWidgetItem = self.deadline_list.currentItem()
+        self.edit_deadline(self.deadline_list.itemWidget(current_selection))
+
+    def edit_deadline(self, deadline_wgt: DeadlineWidget = None) -> Deadline:
+        info_dialog = DeadLineInfoDialog(self, deadline_wgt)
         result = info_dialog.exec_()
         if not result == DeadLineInfoDialog.Accepted:
             return
@@ -111,6 +117,20 @@ class WatcherWidget(QtWidgets.QWidget):
     def update_list(self):
         self.deadline_list.clear()
         self.import_deadlines()
+
+    @QtCore.Slot(QtWidgets.QListWidgetItem)
+    def on_deadline_doubleclick(self, item: QtWidgets.QListWidgetItem):
+        deadline_wgt = self.deadline_list.itemWidget(item)
+        self.edit_deadline(deadline_wgt)
+
+    @QtCore.Slot()
+    def delete_deadline(self):
+        current_selection: QtWidgets.QListWidgetItem = self.deadline_list.currentItem()
+        deadline_name = self.deadline_list.itemWidget(current_selection).deadline.name
+        all_deadlines = self.get_deadlines()
+        all_deadlines.pop(deadline_name)
+        fileFn.write_json(self.DEADLINE_FILE, all_deadlines)
+        self.update_list()
 
 
 class DeadLineInfoDialog(QtWidgets.QDialog):

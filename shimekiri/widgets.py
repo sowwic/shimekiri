@@ -67,7 +67,7 @@ class IntervalWidget(QtWidgets.QWidget):
         self.setLayout(self.main_layout)
 
 
-class ReordarabeListWidget(QtWidgets.QListWidget):
+class DeadlineListWidget(QtWidgets.QListWidget):
     itemsReordered = QtCore.Signal()
 
     def __init__(self, parent=None):
@@ -76,7 +76,18 @@ class ReordarabeListWidget(QtWidgets.QListWidget):
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
         self.installEventFilter(self)
 
+        self.edit_action = QtWidgets.QAction("Edit")
+        self.delete_action = QtWidgets.QAction("Delete")
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
     def eventFilter(self, sender, event):
         if event.type() == QtCore.QEvent.ChildRemoved:
             self.itemsReordered.emit()
         return False
+
+    def show_context_menu(self, point):
+        context_menu = QtWidgets.QMenu()
+        context_menu.addAction(self.edit_action)
+        context_menu.addAction(self.delete_action)
+        context_menu.exec_(self.mapToGlobal(point))
