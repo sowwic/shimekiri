@@ -1,10 +1,7 @@
 import enum
-from pathlib import Path
-from shimekiri import logger
 from shimekiri import Logger
 from PySide2 import QtCore
 from PySide2 import QtWidgets
-from shimekiri import fileFn
 from shimekiri import Config
 
 
@@ -100,7 +97,6 @@ class DeadlineWidget(QtWidgets.QWidget):
 
     def start_countdown(self):
         self.timer.start(self.interval)
-        Logger.debug("Started countdown")
 
     def update_time(self):
         if self.display.value == DisplayEnum.days.value:

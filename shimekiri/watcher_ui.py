@@ -1,11 +1,8 @@
-import enum
-from logging import setLogRecordFactory
 from PySide2 import QtWidgets
 from PySide2 import QtCore
 from shimekiri import Logger
 from shimekiri import Config
 from shimekiri.deadline import Deadline, DeadlineWidget, DisplayEnum, IntervalEnum
-from shimekiri import directories
 from shimekiri import fileFn
 from shimekiri import widgets
 

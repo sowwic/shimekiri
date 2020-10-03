@@ -1,8 +1,7 @@
 import sys
 from PySide2 import QtWidgets
 from PySide2 import QtGui
-from PySide2 import QtCore
-from shimekiri.watcher_ui import WatcherWidget, WatcherDialog
+from shimekiri.watcher_ui import WatcherDialog
 from shimekiri import Logger
 from shimekiri import Config
 from shimekiri import directories
