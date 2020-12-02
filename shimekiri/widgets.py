@@ -88,6 +88,7 @@ class DeadlineListWidget(QtWidgets.QListWidget):
 
     def show_context_menu(self, point):
         context_menu = QtWidgets.QMenu()
+        context_menu.setMaximumWidth(150)
         context_menu.addAction(self.edit_action)
         context_menu.addAction(self.delete_action)
         context_menu.exec_(self.mapToGlobal(point))

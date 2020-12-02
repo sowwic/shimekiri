@@ -1,5 +1,4 @@
 from PySide2 import QtWidgets
-from PySide2 import QtGui
 
 
 class TrayIcon(QtWidgets.QSystemTrayIcon):
@@ -9,6 +8,7 @@ class TrayIcon(QtWidgets.QSystemTrayIcon):
 
         # Tray base menu
         self.main_menu = QtWidgets.QMenu(parent)
+        self.main_menu.setMaximumWidth(150)
         self.setContextMenu(self.main_menu)
 
         # Init UI

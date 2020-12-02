@@ -32,7 +32,7 @@ if __name__ == "__main__":
         # Create dialog and show
         main_dialog = WatcherDialog()
         main_dialog.show()
-        Logger.set_level(Config.get("logging.level", default=10))
+        Logger.set_level(Config.get("logging.level", default=20))
 
         # Connect dialog to tray
         tray_icon.open_deadliner_action.triggered.connect(main_dialog.show)

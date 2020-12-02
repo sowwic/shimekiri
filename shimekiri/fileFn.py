@@ -1,7 +1,7 @@
 """Common file operations"""
 import json
-import pickle
-from pathlib import Path
+import sys
+import pathlib
 from shimekiri import Logger
 
 
@@ -43,40 +43,6 @@ def load_json(path, string_data=False):
     return data
 
 
-# Pickle
-def write_pickle(path, data):
-    backup_data = {}
-    status = 1
-
-    backup_data = load_pickle(path)
-
-    # Check if backup was saved
-    if not status:
-        return path, status
-
-    try:
-        with open(path, "w") as new_file:
-            pickle.dump(data, new_file)
-    except IOError:
-        Logger.exception("Failed to saved file: {0}".format(path))
-        pickle.dump(backup_data, new_file)
-        Logger.warning("Reverted backup data for {0}".format(0))
-        status = 0
-
-    return path, status
-
-
-def load_pickle(path):
-    try:
-        with open(path, "r") as read_file:
-            data = pickle.load(read_file)
-    except IOError as e:
-        Logger.exception("Failed to load file {0}".format(path), exc_info=e)
-        return None
-
-    return data
-
-
 # File
 def create_file(path, data=""):
     try:
@@ -90,6 +56,16 @@ def create_file(path, data=""):
 
 
 # Directory
+def get_data_dir() -> pathlib.Path:
+    home = pathlib.Path.home()
+    if sys.platform == "win32":
+        return home / "AppData/Roaming"
+    elif sys.platform == "linux":
+        return home / ".local/share"
+    elif sys.platform == "darwin":
+        return home / "Library/Application Support"
+
+
 def create_missing_dir(path):
     """Creates specified directory if one doesn't exist
 
@@ -98,7 +74,7 @@ def create_missing_dir(path):
     :return: Path to directory
     :rtype: str
     """
-    path = Path(path)
+    path = pathlib.Path(path)
     if not path.is_dir():
         path.mkdir()
     return path

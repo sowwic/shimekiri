@@ -2,7 +2,7 @@ import enum
 from shimekiri import Logger
 from PySide2 import QtCore
 from PySide2 import QtWidgets
-from shimekiri import Config
+from shimekiri import fileFn
 
 
 @enum.unique
@@ -50,7 +50,7 @@ class Deadline:
 
 class DeadlineWidget(QtWidgets.QWidget):
 
-    DEADLINE_FILE = Config.get_appdata_dir() / "deadlines.json"
+    DEADLINE_FILE = fileFn.get_data_dir() / "shimekiri" / "deadlines.json"
 
     def __init__(self,
                  deadline: Deadline,

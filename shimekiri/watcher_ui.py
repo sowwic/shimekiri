@@ -8,6 +8,9 @@ from shimekiri import widgets
 
 
 class WatcherDialog(QtWidgets.QMainWindow):
+
+    DEFAULT_SIZE = (200, 300)
+
     def __init__(self, parent=None):
         super().__init__(parent, QtCore.Qt.Tool)
 
@@ -15,11 +18,13 @@ class WatcherDialog(QtWidgets.QMainWindow):
         self.setWindowTitle("Shimekiri")
         # self.setWindowFlags(QtCore.Qt.WindowStaysOnBottomHint)
         self.setMinimumSize(200, 300)
-        self.load_geometry_json()
 
         # Create widgets
         watcher = WatcherWidget()
         self.setCentralWidget(watcher)
+
+        # Load position and size
+        self.load_geometry_json()
 
     def closeEvent(self, event):
         event.ignore()
@@ -27,18 +32,18 @@ class WatcherDialog(QtWidgets.QMainWindow):
         self.hide()
 
     def write_geometry_json(self):
-        Config.set("deadliner.geometry", bytes(self.saveGeometry().toHex()).decode("ascii"))
+        Config.set("window.position", [self.pos().x(), self.pos().y()])
+        Config.set("window.size", [self.width(), self.height()])
+        Logger.debug("Saved main window size and position.")
 
     def load_geometry_json(self):
-        old_geometry = Config.get("deadliner.geometry")
-        if old_geometry:
-            old_geometry_byte = QtCore.QByteArray.fromHex(bytes(old_geometry, "ascii"))
-            self.restoreGeometry(old_geometry_byte)
+        self.resize(QtCore.QSize(*Config.get("window.size", default=self.DEFAULT_SIZE)))
+        self.move(QtCore.QPoint(*Config.get("window.position", default=(0, 0))))
 
 
 class WatcherWidget(QtWidgets.QWidget):
 
-    DEADLINE_FILE = Config.get_appdata_dir() / "deadlines.json"
+    DEADLINE_FILE = fileFn.get_data_dir() / "shimekiri" / "deadlines.json"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -91,7 +96,7 @@ class WatcherWidget(QtWidgets.QWidget):
         if self.DEADLINE_FILE.is_file():
             data_dict = fileFn.load_json(self.DEADLINE_FILE)
         else:
-            fileFn.create_file(self.DEADLINE_FILE)
+            fileFn.create_file(self.DEADLINE_FILE, data="{}")
 
         return data_dict
 
@@ -115,12 +120,12 @@ class WatcherWidget(QtWidgets.QWidget):
         self.deadline_list.clear()
         self.import_deadlines()
 
-    @QtCore.Slot(QtWidgets.QListWidgetItem)
+    @ QtCore.Slot(QtWidgets.QListWidgetItem)
     def on_deadline_doubleclick(self, item: QtWidgets.QListWidgetItem):
         deadline_wgt = self.deadline_list.itemWidget(item)
         self.edit_deadline(deadline_wgt)
 
-    @QtCore.Slot()
+    @ QtCore.Slot()
     def delete_deadline(self):
         current_selection: QtWidgets.QListWidgetItem = self.deadline_list.currentItem()
         deadline_name = self.deadline_list.itemWidget(current_selection).deadline.name
