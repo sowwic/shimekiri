@@ -1,3 +1,4 @@
+import os
 import sys
 from PySide2 import QtWidgets
 from PySide2 import QtGui
@@ -6,6 +7,8 @@ from shimekiri import Logger
 from shimekiri import Config
 from shimekiri import directories
 from shimekiri import tray
+
+os.environ["QT_MAC_WANTS_LAYER"] = "1"
 
 
 def load_style(name="diffnes"):
